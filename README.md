@@ -139,7 +139,7 @@ A binary sensor is a sensor that only reports ON/OFF or true/false states.
 void publishConfigBinarySensor(String deviceClass, String name, String icon, String payloadOff, String payloadOn, String startupValue);
 ```
 
-deviceClass: optional, for standardized sensors, use Home Assistant device class to benefit for default icons, names and units, otherwise leave empty (see https://www.home-assistant.io/integrations/sensor/#device-class)
+deviceClass: optional, for standardized sensors, use Home Assistant device class to benefit for default icons, names and units, otherwise leave empty (see https://www.home-assistant.io/integrations/binary_sensor/#device-class)
 name: name of the sensor, can be left empty if defining a device class
 icon: material design icon to illustrate the sensor, can be left empty if defining a device class (see https://pictogrammers.com/library/mdi/)
 payloadOff: text value of the sensor when it reports OFF/false state

@@ -1,26 +1,25 @@
 # Syntax Coloring Map For HomeAssistantMQTT
 
 # Datatypes (KEYWORD1)
-Test    KEYWORD1
 
 # Methods and Functions (KEYWORD2)
-begin KEYWORD2
-loop KEYWORD2
-connected KEYWORD2
-readValues KEYWORD2
-sendValues KEYWORD2
-setCallback KEYWORD2
-setValue KEYWORD2
-getValue KEYWORD2
-publishConfigSensor KEYWORD2
-publishConfigBinarySensor KEYWORD2
-publishConfigNumber KEYWORD2
-publishConfigButton KEYWORD2
-publishConfigSelect KEYWORD2
-publishConfigSwitch KEYWORD2
+begin	KEYWORD2
+loop	KEYWORD2
+connected	KEYWORD2
+readValues	KEYWORD2
+sendValues	KEYWORD2
+setCallback	KEYWORD2
+setValue	KEYWORD2
+getValue	KEYWORD2
+publishConfigSensor	KEYWORD2
+publishConfigBinarySensor	KEYWORD2
+publishConfigNumber	KEYWORD2
+publishConfigButton	KEYWORD2
+publishConfigSelect	KEYWORD2
+publishConfigSwitch	KEYWORD2
 
 
 # Instances (KEYWORD2)
 
 # Constants (LITERAL1)
-HAMQTT_MAXITEMS LITERAL1
+HAMQTT_MAXITEMS	LITERAL1

@@ -1,0 +1,22 @@
+{
+  "name": "HomeAssistantMQTT",
+  "version": "1.2.0",
+  "description": "Arduino Library to create IoT devices connected to Home Assistant via MQTT. This library manages MQTT structure to easily publish Sensors, Binary sensors, Buttons, Switches, Numbers, Selects, DeviceAutomations, Events and Options to create a device and communicate with it in Home Assistant. Supports reading actual values from MQTT upon restart.",
+  "keywords": "hass, mqtt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sierramike/HomeAssistantMQTT"
+  },
+  "authors": [
+    {
+      "name": "Stephane Moitry",      
+      "maintainer": true
+    }
+  ],
+  "license": "Apache-2.0",
+  "frameworks": "arduino",
+  "platforms": ["espressif8266", "espressif32"]
+  "dependencies": {
+    "ArduinoJson": ">=7.0.0"
+  }
+}

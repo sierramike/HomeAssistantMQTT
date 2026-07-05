@@ -8,6 +8,8 @@ loop	KEYWORD2
 connected	KEYWORD2
 readValues	KEYWORD2
 sendValues	KEYWORD2
+sendCommand	KEYWORD2
+sendEvent	KEYWORD2
 setCallback	KEYWORD2
 setValue	KEYWORD2
 getValue	KEYWORD2
@@ -17,7 +19,9 @@ publishConfigNumber	KEYWORD2
 publishConfigButton	KEYWORD2
 publishConfigSelect	KEYWORD2
 publishConfigSwitch	KEYWORD2
-
+publishConfigDeviceAutomation  KEYWORD2
+publishConfigEvent  KEYWORD2
+publishConfigCover	KEYWORD2
 
 # Instances (KEYWORD2)
 

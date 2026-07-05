@@ -8,31 +8,45 @@ HomeAssistantMQTT::HomeAssistantMQTT()
     values[i] = 0;
 }
 
-void HomeAssistantMQTT::setCallback(CallbackFunction f)
+HomeAssistantMQTT::~HomeAssistantMQTT()
 {
-  cb_callback = f;
+  delete mqttClient;
+  mqttClient = nullptr;
+  delete wifiClient;
+  wifiClient = nullptr;
 }
 
-void HomeAssistantMQTT::begin(WiFiClient* wifiClient, const char* server, const uint16_t port)
+void HomeAssistantMQTT::setCallback(HAMQTT_CALLBACK_SIGNATURE)
 {
-  int ln = Manufacturer.length() + DeviceName.length() + 8;
-  MqttStateTopic = new char[ln];
-  strcpy(MqttStateTopic, Manufacturer.c_str());
-  strcat(MqttStateTopic, "/");
-  strcat(MqttStateTopic, DeviceName.c_str());
-  strcat(MqttStateTopic, "/state");
+  this->cb_callback = cb_callback;
+}
+
+void HomeAssistantMQTT::begin(const char* server, const uint16_t port)
+{
+	begin(server, port, 1024, 15);
+}
+
+void HomeAssistantMQTT::begin(const char* server, const uint16_t port, const uint16_t bufferSize, const uint16_t keepAlive)
+{
+  StateTopic = Manufacturer + "/" + MQTTDeviceName;
 
 #ifdef DEBUG
-  Serial.print("MqttStateTopic: \"");
-  Serial.print(MqttStateTopic);
+  Serial.print("StateTopic: \"");
+  Serial.print(StateTopic);
+  Serial.print(", Online state topic: \"");
+  Serial.print(StateTopic + "/state");
   Serial.println("\"");
 #endif
 
+  delete wifiClient;
+  wifiClient = new WiFiClient();
+
+  delete mqttClient;
   mqttClient = new PubSubClient(*wifiClient);
-  mqttClient->setBufferSize(1024);
+  mqttClient->setBufferSize(bufferSize);
   mqttClient->setServer(server, port);
   mqttClient->setCallback(std::bind(&HomeAssistantMQTT::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  mqttClient->setKeepAlive(5);
+  mqttClient->setKeepAlive(keepAlive);
 }
 
 void HomeAssistantMQTT::loop()
@@ -50,10 +64,10 @@ void HomeAssistantMQTT::connect()
 #ifdef CFG_ON_SERIAL
     Serial.print("Attempting MQTT connection...");
 #endif
-    String mqttClientId = DeviceName;
-    if (mqttClient->connect(mqttClientId.c_str(), MqttUser.c_str(), MqttPassword.c_str(), MqttStateTopic, 1, true, "{\"state\":\"offline\"}"))
+    String mqttClientId = MQTTDeviceName;
+    if (mqttClient->connect(mqttClientId.c_str(), MqttUser.c_str(), MqttPassword.c_str(), (StateTopic + "/state").c_str(), 1, true, "{\"state\":\"offline\"}"))
     {
-      mqttClient->publish(MqttStateTopic, "{\"state\":\"online\"}", true);
+      mqttClient->publish((StateTopic + "/state").c_str(), "{\"state\":\"online\"}", true);
 #ifdef CFG_ON_SERIAL
       Serial.println("connected");
 #endif
@@ -75,27 +89,27 @@ bool HomeAssistantMQTT::connected()
   return mqttClient->connected();
 }
 
-void HomeAssistantMQTT::publishConfigSensor(String deviceClass, String stateClass, String name, String icon, String unit, String startupValue)
+void HomeAssistantMQTT::publishConfigSensor(String category, String deviceClass, String stateClass, String name, String icon, String unit, String startupValue)
 {
-  publishConfig("sensor", "", deviceClass, stateClass, name, icon, unit, false, true, "", "", startupValue);
+  publishConfig("sensor", category, deviceClass, stateClass, name, icon, unit, false, true, true, "", "", startupValue);
 }
 
-void HomeAssistantMQTT::publishConfigBinarySensor(String deviceClass, String name, String icon, String payloadOff, String payloadOn, String startupValue)
+void HomeAssistantMQTT::publishConfigBinarySensor(String category, String deviceClass, String name, String icon, String payloadOff, String payloadOn, String startupValue)
 {
   String complement = ",\"payload_off\":\"" + payloadOff + "\",\"payload_on\":\"" + payloadOn + "\"";
-  publishConfig("binary_sensor", "", deviceClass, "", name, icon, "", false, true, "", complement, startupValue);
+  publishConfig("binary_sensor", category, deviceClass, "", name, icon, "", false, true, true, "", complement, startupValue);
 }
 
 void HomeAssistantMQTT::publishConfigNumber(String category, String name, String icon, String unit, String min, String max, String startupValue)
 {
   String complement = ",\"min\":" + min + ",\"max\":" + max + "";
-  publishConfig("number", category, "", "", name, icon, unit, true, true, "", complement, startupValue);
+  publishConfig("number", category, "", "", name, icon, unit, true, true, true, "", complement, startupValue);
 }
 
 void HomeAssistantMQTT::publishConfigButton(String category, String name, String icon, String commandTopicName, String payload)
 {
   String complement = ",\"payload_press\":\"" + payload + "\"";
-  publishConfig("button", category, "", "", name, icon, "", true, false, commandTopicName, complement, "");
+  publishConfig("button", category, "", "", name, icon, "", true, false, false, commandTopicName, complement, "");
 }
 
 void HomeAssistantMQTT::publishConfigSelect(String category, String name, String icon, String options[], unsigned short optionsCount, String startupValue)
@@ -106,7 +120,7 @@ void HomeAssistantMQTT::publishConfigSelect(String category, String name, String
     complement += (i > 0 ? "\",\"" : "") + options[i];
   }
   complement += "\"]";
-  publishConfig("select", category, "", "", name, icon, "", true, true, "", complement, startupValue);
+  publishConfig("select", category, "", "", name, icon, "", true, true, true, "", complement, startupValue);
 }
 
 void HomeAssistantMQTT::publishConfigSwitch(String category, String name, String icon, String startupValue)
@@ -115,29 +129,53 @@ void HomeAssistantMQTT::publishConfigSwitch(String category, String name, String
   nameForTopic.replace(" ", "_");
 
   String complement = ",\"payload_off\":\"false\",\"payload_on\":\"true\"";
-  publishConfig("switch", category, "", "", name, icon, "", true, true, "", complement, startupValue);
+  publishConfig("switch", category, "", "", name, icon, "", true, true, true, "", complement, startupValue);
 }
 
-void HomeAssistantMQTT::publishConfig(const char* type, String category, String deviceClass, String stateClass, String name, String icon, String unit, bool commandTopic, bool stateTopic, String commandTopicName, String complement, String startupValue)
+void HomeAssistantMQTT::publishConfigDeviceAutomation(String category, String type, String subtype)
+{
+  String complement = ", \"payload\":\"" + subtype + "\""
+      + ", \"subtype\":\"" + subtype + "\""
+      + ", \"topic\":\"" + Manufacturer + "/" + MQTTDeviceName + "/" + type + "\""
+      + ", \"type\":\"" + type + "\""
+	  + ",\"automation_type\":\"trigger\"";
+	
+  String name = type + "_" + subtype;
+  name.replace(" ", "_");
+	
+  publishConfig("device_automation", category, "", "", name, "", "", false, false, false, "", complement, "");
+}
+
+void HomeAssistantMQTT::publishConfigEvent(String category, String name, String eventTypes[], unsigned short eventTypesCount)
+{
+  String complement = ",\"event_types\":[\"";
+  for (int i = 0; i < eventTypesCount; i++)
+  {
+    complement += (i > 0 ? "\",\"" : "") + eventTypes[i];
+  }
+  complement += "\"], \"platform\":\"event\"";
+
+  publishConfig("event", category, "", "", name, "", "", false, true, false, "", complement, "");
+}
+
+void HomeAssistantMQTT::publishConfig(const char* type, String category, String deviceClass, String stateClass, String name, String icon, String unit, bool commandTopic, bool stateTopic, bool stateTopicValueTemplate, String commandTopicName, String complement, String startupValue)
 {
   String nameForTopic = (name.length() > 0 ? name : deviceClass);
   nameForTopic.replace(" ", "_");
-  String COMMAND_TOPIC = Manufacturer + "/" + DeviceName + "/set/" + (commandTopicName.length() > 0 ? commandTopicName : nameForTopic);
+  String COMMAND_TOPIC = Manufacturer + "/" + MQTTDeviceName + "/set/" + (commandTopicName.length() > 0 ? commandTopicName : nameForTopic);
 
-  StateTopic = new char[Manufacturer.length() + DeviceName.length() + 1];
-  strcpy(StateTopic, Manufacturer.c_str());
-  strcat(StateTopic, "/");
-  strcat(StateTopic, DeviceName.c_str());
-
-  String topic = "homeassistant/" + String(type) + "/" + DeviceName + "/" + nameForTopic + "/config";
-  String data = "{\"availability\":[{\"topic\":\"" + Manufacturer + "/" + DeviceName + "/state\",\"value_template\":\"{{ value_json.state }}\"}]"
-      + ",\"device\":{\"identifiers\":[\"" + DeviceName + "\"],\"manufacturer\":\"" + Manufacturer + "\",\"model\":\"" + Model + "\",\"name\":\"" + Name + "\",\"sw_version\":\"" + Version + "\"}"
-      + ",\"enabled_by_default\":true"
-
-      + (category.length() > 0 ? ",\"entity_category\":\"config\"" : "")
-      
-      + ",\"unique_id\":\"" + DeviceName + "_" + nameForTopic + "\""
+  String topic = "homeassistant/" + String(type) + "/" + MQTTDeviceName + "/" + nameForTopic + "/config";
+  
+  String data = "{\"availability\":[{\"topic\":\"" + Manufacturer + "/" + MQTTDeviceName + "/state\",\"value_template\":\"{{ value_json.state }}\"}]"
+      + ",\"device\":{\"identifiers\":[\"" + MQTTDeviceName + "\"],\"manufacturer\":\"" + Manufacturer + "\",\"model\":\"" + Model + "\",\"name\":\"" + HADeviceName + "\",\"sw_version\":\"" + Version + "\"}"
+	  + ",\"origin\":{\"name\":\"" + OriginName + "\",\"sw\":\"" + OriginVersion + "\"}"
       + (name.length() > 0 ? ",\"name\":\"" + name + "\"" : "")
+      + ",\"unique_id\":\"" + MQTTDeviceName + "_" + nameForTopic + "\""
+      
+	  + ",\"enabled_by_default\":true"
+
+      + (category.length() > 0 ? ",\"entity_category\":\"" + category + "\"" : "")
+      
       + (icon.length() > 0 ? ",\"icon\":\"" + icon + "\"" : "")
       + (unit.length() > 0 ? ",\"unit_of_measurement\":\"" + unit + "\"" : "")
       + (deviceClass.length() > 0 ? ",\"device_class\":\"" + deviceClass + "\"" : "")
@@ -147,8 +185,8 @@ void HomeAssistantMQTT::publishConfig(const char* type, String category, String 
 
       + (commandTopic ? ",\"command_topic\":\"" + COMMAND_TOPIC + "\"" : "")
       
-      + (stateTopic ? ",\"state_topic\":\"" + String(StateTopic) + "\"" : "")
-      + (stateTopic ? ",\"value_template\":\"{{ value_json." + nameForTopic + " }}\"" : "")
+      + (stateTopic ? ",\"state_topic\":\"" + StateTopic + (!stateTopicValueTemplate ? "/" + nameForTopic : "") + "\"" : "")
+      + (stateTopicValueTemplate ? ",\"value_template\":\"{{ value_json." + nameForTopic + " }}\"" : "")
 
       + "}";
 
@@ -168,6 +206,28 @@ void HomeAssistantMQTT::publishConfig(const char* type, String category, String 
     setValue(nameForTopic, startupValue);
 }
 
+void HomeAssistantMQTT::publishConfigCover(String name, String commandTopicName, String statusEntity, String setPositionTopic, String positionEntity, String payloadOpen, String payloadClose, String payloadStop)
+{
+  String complement = ",\"state_topic\":\"" + StateTopic + "\""
+      + ", \"value_template\":\"" + "{{ value_json." + statusEntity + " }}" + "\""
+      + ", \"set_position_topic\":\"" + StateTopic + "/set/" + setPositionTopic + "\""
+      + ", \"position_topic\":\"" + StateTopic + "\""
+      + ", \"position_template\":\"" + "{{ value_json." + positionEntity + " }}" + "\""
+      + ", \"payload_open\":\"" + payloadOpen + "\""
+      + ", \"payload_close\":\"" + payloadClose + "\""
+      + ", \"payload_stop\":\"" + payloadStop + "\""
+      + ", \"payload_available\":\"online\""
+      + ", \"payload_not_available\":\"offline\"";
+	
+  publishConfig("cover", "", "shutter", "", name, "", "", true, false, false, commandTopicName, complement, "");
+}
+
+void HomeAssistantMQTT::clearSetTopic(String item)
+{
+  String topic = Manufacturer + "/" + MQTTDeviceName + "/set/" + item;
+  mqttClient->publish(topic.c_str(), "", false);
+}
+
 void HomeAssistantMQTT::setValue(String item, String value)
 {
   bool bFound = false;
@@ -176,9 +236,9 @@ void HomeAssistantMQTT::setValue(String item, String value)
   {
     if (values[i] != 0)
     {
-      if (strcmp(values[i]->item, item.c_str()) == 0)
+      if (values[i]->item == item)
       {
-        strcpy(values[i]->value, value.c_str());
+        values[i]->value = value;
         bFound = true;
       }
     }
@@ -186,10 +246,8 @@ void HomeAssistantMQTT::setValue(String item, String value)
     {
       // if we reach an entry with pointer 0, that means we reached end of existing items and didn't find it. Now create a new one.
       ItemValue* iv = new ItemValue;
-      iv->item = new char[31];
-      iv->value = new char[31];
-      strcpy(iv->item, item.c_str());
-      strcpy(iv->value, value.c_str());
+      iv->item = item;
+      iv->value = value;
       values[i] = iv;
       bFound = true;
     }
@@ -204,9 +262,10 @@ String HomeAssistantMQTT::getValue(String item)
   {
     if (values[i] != 0)
     {
-      if (strcmp(values[i]->item, item.c_str()) == 0)
-        return String(values[i]->value);
+      if (values[i]->item == item)
+        return values[i]->value;
     }
+    i++;
   }
   return String("");
 }
@@ -218,7 +277,7 @@ void HomeAssistantMQTT::readValues()
   Serial.print(StateTopic);
   Serial.println("\"");
 #endif
-  mqttClient->subscribe(StateTopic);
+  mqttClient->subscribe(StateTopic.c_str());
 }
 
 void HomeAssistantMQTT::sendValues()
@@ -228,7 +287,7 @@ void HomeAssistantMQTT::sendValues()
   while (i < HAMQTT_MAXITEMS)
   {
     if (values[i] != 0)
-      ln += strlen(values[i]->item) + strlen(values[i]->value) + 6;
+      ln += values[i]->item.length() + values[i]->value.length() + 6;
 
     i++;
   }
@@ -249,13 +308,24 @@ void HomeAssistantMQTT::sendValues()
   char c[ln];
   str.toCharArray(c, ln + 1);
   
-  mqttClient->publish(StateTopic, c, true);
+  mqttClient->publish(StateTopic.c_str(), c, true);
+}
+
+void HomeAssistantMQTT::sendCommand(String commandTopic, String payload)
+{
+  String topic = StateTopic + "/" + commandTopic;
+  mqttClient->publish(topic.c_str(), payload.c_str(), false);
+}
+
+void HomeAssistantMQTT::sendEvent(String eventName, String eventType)
+{
+  sendCommand(eventName, "{\"event_type\":\"" + eventType + "\"}");
 }
 
 void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int length)
 {
 #ifdef DEBUG
-  Serial.print("Message arrived on topic: '");
+  Serial.print("  ** Message arrived on topic: '");
   Serial.print(topic);
   Serial.print("' with payload: ");
 #endif
@@ -272,15 +342,16 @@ void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int le
   Serial.println();
 #endif
 
-  if (strcmp(StateTopic, topic) == 0)
+  if (StateTopic == topic)
   {
+    mqttClient->unsubscribe(StateTopic.c_str());
     // Received message on device state topic, read the values and unsubscribe from the topic
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, cPayload);
     if (error)
     {
 #ifdef DEBUG
-      Serial.print("Error reading old values, deserializeJson() returned: ");
+      Serial.print("     Error reading old values, deserializeJson() returned: ");
       Serial.println(error.c_str());
 #endif
     }
@@ -289,7 +360,7 @@ void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int le
       for (JsonPair kv : doc.as<JsonObject>())
       {
 #ifdef DEBUG
-        Serial.print("Key: \"");
+        Serial.print("     Key: \"");
         Serial.print(kv.key().c_str());
         Serial.print("\", Value: \"");
         Serial.print(kv.value().as<const char*>());
@@ -299,14 +370,14 @@ void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int le
         if (cb_callback != NULL)
           cb_callback(String(kv.key().c_str()), String(kv.value().as<const char*>()), true);
       }
-      sendValues();
+      //sendValues();
     }
     
-    mqttClient->unsubscribe(StateTopic);
+    // mqttClient->unsubscribe(StateTopic.c_str());
   }
   else
   {
-    String COMMAND_TOPIC = Manufacturer + "/" + DeviceName + "/set/";
+    String COMMAND_TOPIC = Manufacturer + "/" + MQTTDeviceName + "/set/";
     if (strncmp(topic, COMMAND_TOPIC.c_str(), COMMAND_TOPIC.length()) == 0)
     {
       char buffer[strlen(topic + COMMAND_TOPIC.length())];

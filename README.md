@@ -1,11 +1,11 @@
 # HomeAssistantMQTT
 Arduino Library to create IoT devices connected to Home Assistant via MQTT.
 
-This library manages MQTT structure to easily publish Sensors, Binary sensors, Buttons, Switches, Numbers and Options to create a device and communicate with it in Home Assistant. Supports reading actual values from MQTT upon restart.
+This library manages MQTT structure to easily publish Sensors, Binary sensors, Buttons, Switches, Numbers, Selects, DeviceAutomations, Events and Options to create a device and communicate with it in Home Assistant. Supports reading actual values from MQTT upon restart.
 
 ## Features
 
-* Publish Sensor, Binary sensor, Button, Number, Select, Switch items to MQTT
+* Publish Sensor, Binary sensor, Button, Number, Select, Switch, DeviceAutomation, Events items to MQTT
 * Handles command and state topics automatically
 * Publish device state
 * Read previous device state from MQTT topic upon restart
@@ -93,6 +93,9 @@ void publishMqttConfig()
   String options[] = { "Open", "Close", "None" };
   mqtt.publishConfigSelect("config", "Startup init", "mdi:cog-refresh", options, 3, "Open");
   mqtt.publishConfigSwitch("config", "Enabled", "mdi:blur", "true");
+
+  String eventtypes[] = { "up_pressed", "up_released", "down_pressed", "down_released" };
+  mqtt.publishConfigEvent("", "Button", eventtypes, 4);
 }
 ```
 
@@ -124,9 +127,10 @@ Several methods are available to publish sensors, binary sensors, buttons, numbe
 A sensor will report values to Home Assistant that are not "ON/OFF" style.
 
 ```c++
-void publishConfigSensor(String deviceClass, String stateClass, String name, String icon, String unit, String startupValue);
+void publishConfigSensor(String category, String deviceClass, String stateClass, String name, String icon, String unit, String startupValue);
 ```
 
+- category: config or diagnostic, or left empty, to define the group where this entity is diplayed in Home Assistant
 - deviceClass: optional, for standardized sensors, use Home Assistant device class to benefit for default icons, names and units, otherwise leave empty (see https://www.home-assistant.io/integrations/sensor/#device-class)
 - stateClass: optional, for standardized sensors
 - name: name of the sensor, can be left empty if defining a device class
@@ -139,9 +143,10 @@ void publishConfigSensor(String deviceClass, String stateClass, String name, Str
 A binary sensor is a sensor that only reports ON/OFF or true/false states.
 
 ```c++
-void publishConfigBinarySensor(String deviceClass, String name, String icon, String payloadOff, String payloadOn, String startupValue);
+void publishConfigBinarySensor(String category, String deviceClass, String name, String icon, String payloadOff, String payloadOn, String startupValue);
 ```
 
+- category: config or diagnostic, or left empty, to define the group where this entity is diplayed in Home Assistant
 - deviceClass: optional, for standardized sensors, use Home Assistant device class to benefit for default icons, names and units, otherwise leave empty (see https://www.home-assistant.io/integrations/binary_sensor/#device-class)
 - name: name of the sensor, can be left empty if defining a device class
 - icon: material design icon to illustrate the sensor, can be left empty if defining a device class (see https://pictogrammers.com/library/mdi/)
@@ -206,3 +211,24 @@ void publishConfigSwitch(String category, String name, String icon, String start
 - name: name of the button
 - icon: material design icon to illustrate the button (see https://pictogrammers.com/library/mdi/)
 - startupValue: value of the numeric field at startup of the device, if no previous value can be read from MQTT state topic
+
+### publishConfigDeviceAutomation
+
+DEPRECATED: DeviceAutomation allows for events to be sent to Home Assistant. Currently replaced by Events (see below), so preferably stop using Device Automation config.
+
+```c++
+void publishConfigDeviceAutomation(String category, String type, String subtype);
+```
+
+### publishConfigEvent
+
+Allows the device to send events to Home Assistant. Events can be used as triggers in Home Assistant automations.
+
+```c++
+void publishConfigEvent(String category, String name, String eventTypes[], unsigned short eventTypesCount);
+```
+
+- category: config or diagnostic, or left empty, to define the group where this entity is diplayed in Home Assistant
+- name: name of the event
+- options: String array containing the list of predefined event values
+- eventTypesCount: number of predefined values in "eventTypes" array

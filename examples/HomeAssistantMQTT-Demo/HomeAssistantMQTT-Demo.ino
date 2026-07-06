@@ -97,6 +97,15 @@ void loop() {
       // Try to read actual values from MQTT to restore previous state
       mqtt.readValues();
       _bMqttConfigPublished = true;
+
+      // After Mqtt config published, set diagnostic values
+      mqtt.setValue("IP", WiFi.localIP().toString());
+      mqtt.setValue("MAC", WiFi.macAddress());
+      mqtt.setValue("SSID", WiFi.SSID());
+      
+      // DON'T CALL mqtt.sendValues(); here, otherwise default values for ALL items will overwrite actual Mqtt values.
+      // mqtt.readValues(); called earlier here is async. After getting initial values, sendValues() will be called and
+      // everything will be written to Mqtt.
     }
   }
   
@@ -112,6 +121,10 @@ void publishMqttConfig()
 #ifdef DEBUG
   Serial.println("Publishing config:");
 #endif
+
+  mqtt.publishConfigSensor("diagnostic", "", "", "IP", "mdi:ip-network", "", "");
+  mqtt.publishConfigSensor("diagnostic", "", "", "MAC", "mdi:table-network", "", "");
+  mqtt.publishConfigSensor("diagnostic", "", "", "SSID", "mdi:access-point-network", "", "");
   
   mqtt.publishConfigSensor("", "", "", "Button", "mdi:gesture-tap-button", "", "None");
   mqtt.publishConfigSensor("", "", "", "Position", "mdi:window-shutter-settings", "%", "0");

@@ -4,6 +4,9 @@
 
 HomeAssistantMQTT::HomeAssistantMQTT()
 {
+  mqttClient = nullptr;
+  wifiClient = nullptr;
+    
   for (int i = 0; i < HAMQTT_MAXITEMS; i++)
     values[i] = 0;
 }
@@ -308,6 +311,13 @@ void HomeAssistantMQTT::sendValues()
   char c[ln];
   str.toCharArray(c, ln + 1);
   
+#ifdef DEBUG
+  Serial.print("MQTT PUBLISH: ");
+  Serial.print(StateTopic);
+  Serial.print(" => ");
+  Serial.println(c);
+#endif
+  
   mqttClient->publish(StateTopic.c_str(), c, true);
 }
 
@@ -370,9 +380,8 @@ void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int le
         if (cb_callback != NULL)
           cb_callback(String(kv.key().c_str()), String(kv.value().as<const char*>()), true);
       }
-      //sendValues();
+      sendValues();
     }
-    
     // mqttClient->unsubscribe(StateTopic.c_str());
   }
   else

@@ -84,5 +84,6 @@ class HomeAssistantMQTT
     void publishConfigDeviceAutomation(String category, String type, String subtype);
     void publishConfigEvent(String category, String name, String eventTypes[], unsigned short eventTypesCount);
 
-    void publishConfigCover(String name, String commandTopicName, String statusEntity, String setPositionTopic, String positionEntity, String payloadOpen, String payloadClose, String payloadStop);
+    void publishConfigCover(String category, String name, String commandTopicName, String statusEntity, String setPositionTopic, String positionEntity, String payloadOpen, String payloadClose, String payloadStop);
+    void publishConfigClimate(String category, String name, String icon, String unit, String min, String max, String step, String startupValue);
 };

@@ -209,7 +209,7 @@ void HomeAssistantMQTT::publishConfig(const char* type, String category, String 
     setValue(nameForTopic, startupValue);
 }
 
-void HomeAssistantMQTT::publishConfigCover(String name, String commandTopicName, String statusEntity, String setPositionTopic, String positionEntity, String payloadOpen, String payloadClose, String payloadStop)
+void HomeAssistantMQTT::publishConfigCover(String category, String name, String commandTopicName, String statusEntity, String setPositionTopic, String positionEntity, String payloadOpen, String payloadClose, String payloadStop)
 {
   String complement = ",\"state_topic\":\"" + StateTopic + "\""
       + ", \"value_template\":\"" + "{{ value_json." + statusEntity + " }}" + "\""
@@ -222,7 +222,22 @@ void HomeAssistantMQTT::publishConfigCover(String name, String commandTopicName,
       + ", \"payload_available\":\"online\""
       + ", \"payload_not_available\":\"offline\"";
 	
-  publishConfig("cover", "", "shutter", "", name, "", "", true, false, false, commandTopicName, complement, "");
+  publishConfig("cover", category, "shutter", "", name, "", "", true, false, false, commandTopicName, complement, "");
+}
+
+void HomeAssistantMQTT::publishConfigClimate(String category, String name, String icon, String unit, String min, String max, String step, String startupValue)
+{
+  String cmdTopic = Manufacturer + "/" + MQTTDeviceName + "/set/" + name;
+
+  String complement = ",\"temp_cmd_t\":\"" + cmdTopic + "\"";
+
+  // supress the "+" sign in front of max, step value to avoid troubles in MQTT
+  max.replace("+", "");
+  min.replace("+", "");
+  step.replace("+", "");
+  complement += ",\"min_temp\":" + min + ",\"max_temp\":" + max + ",\"temp_step\":" + step;
+
+  publishConfig("climate", category, "", "", name, icon, unit, true, true, true, name, complement, startupValue);
 }
 
 void HomeAssistantMQTT::clearSetTopic(String item)

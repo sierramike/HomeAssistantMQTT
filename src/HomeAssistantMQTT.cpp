@@ -103,6 +103,11 @@ void HomeAssistantMQTT::publishConfigBinarySensor(String category, String device
   publishConfig("binary_sensor", category, deviceClass, "", name, icon, "", false, true, true, "", complement, startupValue);
 }
 
+void HomeAssistantMQTT::publishConfigText(String category, String name, String icon, String startupValue)
+{
+  publishConfig("text", category, "", "", name, icon, "", true, true, "", "", startupValue);
+}
+
 void HomeAssistantMQTT::publishConfigNumber(String category, String name, String icon, String unit, String min, String max, String startupValue)
 {
   String complement = ",\"min\":" + min + ",\"max\":" + max + "";

@@ -1,11 +1,11 @@
 # HomeAssistantMQTT
 Arduino Library to create IoT devices connected to Home Assistant via MQTT.
 
-This library manages MQTT structure to easily publish Sensors, Binary sensors, Buttons, Switches, Numbers, Selects, DeviceAutomations, Events and Options to create a device and communicate with it in Home Assistant. Supports reading actual values from MQTT upon restart.
+This library manages MQTT structure to easily publish Sensors, Binary sensors, Buttons, Switches, Numbers, Selects, Text fields, DeviceAutomations, Events and Options to create a device and communicate with it in Home Assistant. Supports reading actual values from MQTT upon restart.
 
 ## Features
 
-* Publish Sensor, Binary sensor, Button, Number, Select, Switch, DeviceAutomation, Events items to MQTT
+* Publish Sensor, Binary sensor, Button, Number, Select, Switch, Text, DeviceAutomation, Events items to MQTT
 * Handles command and state topics automatically
 * Publish device state
 * Read previous device state from MQTT topic upon restart
@@ -93,6 +93,7 @@ void publishMqttConfig()
   String options[] = { "Open", "Close", "None" };
   mqtt.publishConfigSelect("config", "Startup init", "mdi:cog-refresh", options, 3, "Open");
   mqtt.publishConfigSwitch("config", "Enabled", "mdi:blur", "true");
+  mqtt.publishConfigText("config", "Text value", "mdi:text", "Hello");
 
   String eventtypes[] = { "up_pressed", "up_released", "down_pressed", "down_released" };
   mqtt.publishConfigEvent("", "Button", eventtypes, 4);
@@ -106,11 +107,11 @@ The callback method is defined in the setup method of the sketch. This method is
 It is recommanded to update the state topic of the device with new incoming values and update the state topic, but buttons don't have states, so you may check for the item parameter content to only update other topics but not buttons, like in the example below:
 
 ```c++
-void HAMQTT_Callback(String item, String payload)
+void HAMQTT_Callback(String item, String payload, bool readFromMQTT)
 {
   // PROCESS NEW DATA HERE
 
-  if (item != "Command")
+  if (item != "Command" && !readFromMQTT)
   {
     mqtt.setValue(item, payload);
     mqtt.sendValues();
@@ -211,6 +212,19 @@ void publishConfigSwitch(String category, String name, String icon, String start
 - name: name of the button
 - icon: material design icon to illustrate the button (see https://pictogrammers.com/library/mdi/)
 - startupValue: value of the numeric field at startup of the device, if no previous value can be read from MQTT state topic
+
+### publishConfigText
+
+Text is a text field where a user can enter and update a string value.
+
+```c++
+void publishConfigText(String category, String name, String icon, String startupValue);
+```
+
+- category: config or diagnostic, or left empty, to define the group where this entity is displayed in Home Assistant
+- name: name of the text field
+- icon: material design icon to illustrate the text field (see https://pictogrammers.com/library/mdi/)
+- startupValue: initial text value, used if no previous value can be read from the MQTT state topic
 
 ### publishConfigDeviceAutomation
 

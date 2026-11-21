@@ -135,6 +135,16 @@ void HomeAssistantMQTT::publishConfigSwitch(String category, String name, String
   publishConfig("switch", category, "", "", name, icon, "", true, true, true, "", complement, startupValue);
 }
 
+void HomeAssistantMQTT::publishConfigText(String category, String name, String icon, String startupValue)
+{
+    String complement =
+        ",\"min\":0"
+        ",\"max\":255"
+        ",\"mode\":\"text\"";
+
+    publishConfig("text", category, "", "", name, icon, "", true, true, true, "", complement, startupValue);
+}
+
 void HomeAssistantMQTT::publishConfigDeviceAutomation(String category, String type, String subtype)
 {
   String complement = ", \"payload\":\"" + subtype + "\""

@@ -79,8 +79,8 @@ void setup() {
   mqtt.Manufacturer = _MANUF;
   mqtt.Model = _MODEL;
   mqtt.Version = _VERSION;
-  mqtt.Name = _NAME;
-  mqtt.DeviceName = _MANUF + "_" + _MODEL + "_" + MAC;
+  mqtt.MQTTDeviceName = _NAME;
+  mqtt.HADeviceName = _MANUF + "_" + _MODEL + "_" + MAC;
   mqtt.setCallback(HAMQTT_Callback);
   
   mqtt.begin(&wifiClient, mqtt_server, mqtt_server_port, MQTTBUFFER, MQTTKEEPALIVE);
@@ -142,6 +142,7 @@ void publishMqttConfig()
   String options[] = { "Open", "Close", "None" };
   mqtt.publishConfigSelect("config", "Startup init", "mdi:cog-refresh", options, 3, "Open");
   mqtt.publishConfigSwitch("config", "Enabled", "mdi:blur", "true");
+  mqtt.publishConfigText("config", "Text value", "mdi:text", "Hello");
 
   String eventtypes[] = { "up_pressed", "up_released", "down_pressed", "down_released" };
   mqtt.publishConfigEvent("", "Button", eventtypes, 4);

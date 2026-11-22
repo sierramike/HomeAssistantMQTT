@@ -333,7 +333,7 @@ void HomeAssistantMQTT::sendValues()
     i++;
   }
   str[ln - 1] = '}';
-  char c[ln];
+  char c[ln + 1];
   str.toCharArray(c, ln + 1);
   
 #ifdef DEBUG
@@ -414,10 +414,8 @@ void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int le
     String COMMAND_TOPIC = Manufacturer + "/" + MQTTDeviceName + "/set/";
     if (strncmp(topic, COMMAND_TOPIC.c_str(), COMMAND_TOPIC.length()) == 0)
     {
-      char buffer[strlen(topic + COMMAND_TOPIC.length())];
-      strcpy(buffer, topic + COMMAND_TOPIC.length());
       if (cb_callback != NULL)
-        cb_callback(String(buffer), String(cPayload), false);
+        cb_callback(String(topic + COMMAND_TOPIC.length()), String(cPayload), false);
     }
   }
 }

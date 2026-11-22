@@ -81,6 +81,7 @@ class HomeAssistantMQTT
     void publishConfigButton(String category, String name, String icon, String commandTopicName, String payload);
     void publishConfigSelect(String category, String name, String icon, String options[], unsigned short optionsCount, String startupValue);
     void publishConfigSwitch(String category, String name, String icon, String startupValue);
+    void publishConfigText(String category, String name, String icon, String commandTopicName, String startupValue);
     void publishConfigDeviceAutomation(String category, String type, String subtype);
     void publishConfigEvent(String category, String name, String eventTypes[], unsigned short eventTypesCount);
 

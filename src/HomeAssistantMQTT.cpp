@@ -135,6 +135,16 @@ void HomeAssistantMQTT::publishConfigSwitch(String category, String name, String
   publishConfig("switch", category, "", "", name, icon, "", true, true, true, "", complement, startupValue);
 }
 
+void HomeAssistantMQTT::publishConfigText(String category, String name, String icon, String commandTopicName, String startupValue)
+{
+    String complement =
+        ",\"min\":0"
+        ",\"max\":255"
+        ",\"mode\":\"text\"";
+
+    publishConfig("text", category, "", "", name, icon, "", true, false, false, commandTopicName, complement, startupValue);
+}
+
 void HomeAssistantMQTT::publishConfigDeviceAutomation(String category, String type, String subtype)
 {
   String complement = ", \"payload\":\"" + subtype + "\""
@@ -323,7 +333,7 @@ void HomeAssistantMQTT::sendValues()
     i++;
   }
   str[ln - 1] = '}';
-  char c[ln];
+  char c[ln + 1];
   str.toCharArray(c, ln + 1);
   
 #ifdef DEBUG
@@ -404,10 +414,8 @@ void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int le
     String COMMAND_TOPIC = Manufacturer + "/" + MQTTDeviceName + "/set/";
     if (strncmp(topic, COMMAND_TOPIC.c_str(), COMMAND_TOPIC.length()) == 0)
     {
-      char buffer[strlen(topic + COMMAND_TOPIC.length())];
-      strcpy(buffer, topic + COMMAND_TOPIC.length());
       if (cb_callback != NULL)
-        cb_callback(String(buffer), String(cPayload), false);
+        cb_callback(String(topic + COMMAND_TOPIC.length()), String(cPayload), false);
     }
   }
 }

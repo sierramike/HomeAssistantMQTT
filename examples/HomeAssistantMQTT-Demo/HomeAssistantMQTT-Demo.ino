@@ -79,8 +79,8 @@ void setup() {
   mqtt.Manufacturer = _MANUF;
   mqtt.Model = _MODEL;
   mqtt.Version = _VERSION;
-  mqtt.Name = _NAME;
-  mqtt.DeviceName = _MANUF + "_" + _MODEL + "_" + MAC;
+  mqtt.MQTTDeviceName = _NAME;
+  mqtt.HADeviceName = _MANUF + "_" + _MODEL + "_" + MAC;
   mqtt.setCallback(HAMQTT_Callback);
   
   mqtt.begin(&wifiClient, mqtt_server, mqtt_server_port, MQTTBUFFER, MQTTKEEPALIVE);
@@ -130,7 +130,7 @@ void publishMqttConfig()
   mqtt.publishConfigSensor("", "", "", "Position", "mdi:window-shutter-settings", "%", "0");
   mqtt.publishConfigSensor("", "", "", "Status", "mdi:window-shutter", "", "Up");
   mqtt.publishConfigSensor("", "temperature", "measurement", "Temperature", "", "°C", "None");
-  mqtt.publishConfigSensor("", "precipitation", "total_incresing", "Rain", "", "mm", "None");
+  mqtt.publishConfigSensor("", "precipitation", "total_increasing", "Rain", "", "mm", "None");
   mqtt.publishConfigBinarySensor("", "smoke", "", "", "false", "true", "false");
   mqtt.publishConfigNumber("config", "Duration", "mdi:timer", "s", "0", "300", "25");
   mqtt.publishConfigNumber("config", "Shadow position", "mdi:window-shutter-alert", "%", "5", "95", "85");
@@ -142,6 +142,7 @@ void publishMqttConfig()
   String options[] = { "Open", "Close", "None" };
   mqtt.publishConfigSelect("config", "Startup init", "mdi:cog-refresh", options, 3, "Open");
   mqtt.publishConfigSwitch("config", "Enabled", "mdi:blur", "true");
+  mqtt.publishConfigText("config", "Text value", "mdi:text", "Text", "Hello");
 
   String eventtypes[] = { "up_pressed", "up_released", "down_pressed", "down_released" };
   mqtt.publishConfigEvent("", "Button", eventtypes, 4);
@@ -149,21 +150,35 @@ void publishMqttConfig()
 
 void HAMQTT_Callback(String item, String payload, bool readFromMQTT)
 {
-#ifdef DEBUG
-  Serial.print("Message arrived for item: '");
-  Serial.print(item);
-  Serial.print("' with payload: ");
-  Serial.print(payload);
-  if (readFromMQTT)
-    Serial.print(" (read from MQTT)");
-  Serial.println();
-#endif
+  #ifdef DEBUG
+    Serial.print("Message arrived for item: '");
+    Serial.print(item);
+    Serial.print("' with payload: ");
+    Serial.print(payload);
+    if (readFromMQTT)
+      Serial.print(" (read from MQTT)");
+    Serial.println();
+  #endif
 
   // PROCESS NEW DATA HERE
 
-  if (item != "Command" && !readFromMQTT)
+  if (readFromMQTT)
+        return;
+
+  // Handle incoming text from Home Assistant
+  if (item == "Text")
   {
-    mqtt.setValue(item, payload);
-    mqtt.sendValues();
+      Serial.println("Text received:");
+      Serial.println(payload);
+
+      // Process the received text here
+      return;
+  }
+
+  // Handle other incoming values
+  if (item != "Command")
+  {
+      mqtt.setValue(item, payload);
+      mqtt.sendValues();
   }
 }

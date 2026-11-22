@@ -77,12 +77,12 @@ The method name can be changed. Call publishMethodxxxxxxx functions to publish a
 ```c++
 void publishMqttConfig()
 {
-  mqtt.publishConfigSensor("", "", "Button", "mdi:gesture-tap-button", "", "None");
-  mqtt.publishConfigSensor("", "", "Position", "mdi:window-shutter-settings", "%", "0");
-  mqtt.publishConfigSensor("", "", "Status", "mdi:window-shutter", "", "Up");
-  mqtt.publishConfigSensor("temperature", "measurement", "Temperature", "", "°C", "None");
-  mqtt.publishConfigSensor("precipitation", "total_incresing", "Rain", "", "mm", "None");
-  mqtt.publishConfigBinarySensor("smoke", "", "", "false", "true", "false");
+  mqtt.publishConfigSensor("", "", "", "Button", "mdi:gesture-tap-button", "", "None");
+  mqtt.publishConfigSensor("", "", "", "Position", "mdi:window-shutter-settings", "%", "0");
+  mqtt.publishConfigSensor("", "", "", "Status", "mdi:window-shutter", "", "Up");
+  mqtt.publishConfigSensor("", "temperature", "measurement", "Temperature", "", "°C", "None");
+  mqtt.publishConfigSensor("", "precipitation", "total_increasing", "Rain", "", "mm", "None");
+  mqtt.publishConfigBinarySensor("", "smoke", "", "", "false", "true", "false");
   mqtt.publishConfigNumber("config", "Duration", "mdi:timer", "s", "0", "300", "25");
   mqtt.publishConfigNumber("config", "Shadow position", "mdi:window-shutter-alert", "%", "5", "95", "85");
   mqtt.publishConfigButton("", "Open", "mdi:window-shutter-open", "Command", "open");
@@ -93,7 +93,7 @@ void publishMqttConfig()
   String options[] = { "Open", "Close", "None" };
   mqtt.publishConfigSelect("config", "Startup init", "mdi:cog-refresh", options, 3, "Open");
   mqtt.publishConfigSwitch("config", "Enabled", "mdi:blur", "true");
-  mqtt.publishConfigText("config", "Text value", "mdi:text", "Hello");
+  mqtt.publishConfigText("config", "Text value", "mdi:text", "Text", "Hello");
 
   String eventtypes[] = { "up_pressed", "up_released", "down_pressed", "down_released" };
   mqtt.publishConfigEvent("", "Button", eventtypes, 4);
@@ -218,12 +218,13 @@ void publishConfigSwitch(String category, String name, String icon, String start
 Text is a text field where a user can enter and update a string value.
 
 ```c++
-void publishConfigText(String category, String name, String icon, String startupValue);
+void publishConfigText(String category, String name, String icon, String commandTopicName, String startupValue);
 ```
 
 - category: config or diagnostic, or left empty, to define the group where this entity is displayed in Home Assistant
 - name: name of the text field
 - icon: material design icon to illustrate the text field (see https://pictogrammers.com/library/mdi/)
+- commandTopicName: the MQTT command topic suffix used when the text is changed
 - startupValue: initial text value, used if no previous value can be read from the MQTT state topic
 
 ### publishConfigDeviceAutomation
